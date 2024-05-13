@@ -1,17 +1,16 @@
 #Timevault
+#Jacob Mattie, May 13, 2024
 
 # This is code to encrypt a file for an indeterminate (user-set) amount of time; most typically in weeks scale. 
-#
-#
 # * This would be best meshed with a GUI, wherein locations could be selected through a traditinal file-window manager.
 # Security should be considered -- this is not a robust file encryption scheme, since all keys are visible within keyChain.
 # Keychain could be encrypted elsehow (consider private data center & API calls for business use). 
-# For user-end simple encryption, generating a large enough set of random data to obfuscate the true term (vulnerable to automation)
+# For a user-end simple encryption, generating a large enough set of random data to obfuscate the true term (vulnerable to automation)
 
-	# Write a .bat script to run timevault on computer startup (so files are decrypted when appropriate)
+#Future improvements:
+	# Write a .bat script to parse timevault cells on computer startup (so files are decrypted when appropriate)
 	# On TimeVault startup, check jail times. If none are due for release, exit the program to save computer power.
-
-#Currently, ecrypted files are inventoried through use of a .txt file. This would be better handled by an SQL engine (see also: import sqlite3)
+    # Currently, ecrypted files are inventoried through use of a .txt file. This would be better handled by an SQL engine (see also: import sqlite3)
 
 import os
 from cryptography.fernet import Fernet
@@ -32,7 +31,7 @@ class cell:
         if (self.contents == ""):
             return(f"File release date is: day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n")     
         else:
-            return (f"Recorded file summary is: {self.Contents}\n\nFile release date is:  day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n"\n")     
+            return (f"Recorded file summary is: {self.Contents}\n\nFile release date is:  day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n\n")     
     
     def encryptFile(self):  #note that the "self" argument allows access to all class parameters
         #record calculateRelease alongside information on: key, originalDirectory
@@ -66,16 +65,16 @@ class cell:
                 os.remove(fileName + ".encrypted")           #only removes the encrypted file once the duplicate has been successfully restored
                 os.chdir(timeVaultDirectory)
 
+    def checkSentenceDone(self): #boolean return
+        if ((self.releaseDate) <= datetime.datetime.today()):
+            return False
+        else:
+            return True
+
 
 def calculateRelease(timeIn, jailTimeWeeks): #returns date in YYYY-MM-DD. Can call for calculateRelease(timeIn, jailTimeWeeks).year
     releaseDate = timeIn + datetime.timedelta(weeks=jailTimeWeeks)
     return releaseDate
-
-def checkSentenceDone(releaseDate, currentDate): #boolean return
-    if ((releaseDate) <= datetime.datetime.today()):
-        return False
-    else:
-        return True
 
 def generateKey():
     return Fernet.generate_key()
@@ -92,9 +91,7 @@ def makeInventory(): #should only be run once -- this is the "setup wizard"
     else:
         continue
 
-
-
-def mostRecentIdentifier(): #generates the next available identifier number with which to associate a cell
+def mostRecentIdentifier(): #generates the next available identifier number with which to associate a cell. Should be replaced with SQL someday
     os.chdir(timeVaultInventory)
 
     with open("Identifiers.txt", "r") as file:
@@ -106,19 +103,18 @@ def mostRecentIdentifier(): #generates the next available identifier number with
     os.chdir(timeVaultDirectory)
     return identifier
 
-
-
 # ------------------------------------------------------------
 # Main 
 # ------------------------------------------------------------
 
 
-global defaultFileDirectory = "/defaultFileDirectory"
+global targetFileDirectory = "/targetFileDirectory"
 global timeVaultDirectory = os.path.dirname(__file__)
 global timeVaultInventory = timeVaultDirectory + "/Inventory"
-
 targetFile = "LeagueofLegends.exe"
-startupMessage = "Welcome to Timevault. \nCurrent timelock settings are for: n weeks\nCurrent file directory is: " + defaultFileDirectory + "\n" + f"You are looking to encrypt: {targetFile}" + "\n\nPress 'enter' to begin.\n\nEnter 'edit' to change settings.\nEnter 'help' for more information."
+global jailTimeWeeks = 6 #weeks
+
+startupMessage = f"Welcome to Timevault. \nCurrent timelock settings are for: {jailTimeWeeks} weeks\nCurrent target file directory is: " + targetFileDirectory + "\n" + f"You are looking to encrypt: {targetFile}" + "\n\nPress 'enter' to begin.\n\nEnter 'edit' to change settings.\nEnter 'help' for more information."
 promptIterationMessage = "Continue.\nPress 'enter' to begin program, using values as defined previously"
 helpString = "help"
 editString = "edit"
@@ -134,9 +130,13 @@ while True:
     if(len.userChoice == 0)
         break
 
+userComments = input("Would you like to associate comments with the file?\n")
+
 key = generateKey()
 identifier = mostRecentIdentifier()
 os.chdir(timeVaultInventory)
+
+convict = cell(key, calculateRelease(), targetFileDirectory, targetFile, userComments, identifier)
 
 with open("Inventory.txt", "a") as file:
     file.write(identifier + ", ")  # Writing a numerical value, followed by a comma delimiter
@@ -146,33 +146,4 @@ with open("Inventory.txt", "a") as file:
     currentDate = datetime.datetime.today() # returns date in format: YYYY-MM-DD
     releaseDate = calculateRelease(currentDate, jailTimeWeeks)
 
-# ------------------------------------------------------------
-# Reference 
-# ------------------------------------------------------------
-# 
-# os.chdir(path)
-# os.mkdir(path)
-# if os.path.exists(file_path):
-    # os.remove(file_path)
-# 
-# 
-# 
-# 
-
-
-# ------------------------------
-# DECRYPT
-# ------------------------------
-
-def decrypt_file(filename, key):
-    fernet = Fernet(key)
-    with open(filename, "rb") as encrypted_file:
-        encrypted_data = encrypted_file.read()
-    decrypted_data = fernet.decrypt(encrypted_data)
-    with open(filename.replace(".encrypted", ""), "wb") as decrypted_file:
-        decrypted_file.write(decrypted_data)
-
-# Example usage
-key = load_key_from_file("encryption_key.key")  # Load the key from the file
-file_to_decrypt = "file_to_encrypt.txt.encrypted"  # Replace with the path to your encrypted file
-decrypt_file(file_to_decrypt, key)
+convict.encryptFile()
