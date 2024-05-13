@@ -1,4 +1,4 @@
-#Timevault - test line 
+#Timevault
 
 # This is code to encrypt a file for an indeterminate (user-set) amount of time; most typically in months/weeks scale. 
 # 
@@ -48,8 +48,8 @@ class cell:
         self.jailTime = inputJailTime
         self.originalDirectory = inputOriginalDirectory
         self.fileName = inputFileName
-        self.contents = inputContents
-        self.identifier = inputIdentifier   
+        self.contents = inputContents       #human-readable
+        self.identifier = inputIdentifier   #numerical
 
     def __str__(self):
         return(f"Recorded file contents are: {self.Contents}\nFile release date is: {calculateRelease(self.timeIn, self.jailTime)} (YYYY-MM-DD)\n")     
@@ -57,11 +57,8 @@ class cell:
     def encryptFile(self):  #note that the "self" argument allows access to all class parameters
         currentDate = datetime.datetime.today() # returns date in format: YYYY-MM-DD
         calculateRelease(currentDate, jailTime)
-
-
         #record calculateRelease alongside information on: key, originalDirectory
         #file management/jailing is addressed here
-
         encryptionMethod = Fernet(self.key)
 
         with open(fileName, "rb") as file:
@@ -71,6 +68,8 @@ class cell:
         with open(fileName + ".encrypted", "wb") as encrypted_file:
             encrypted_file.write(encrypteData)
             #write a copy of encrypted data to timeVault inventory
+
+
 
         #delete original .exe file
 
@@ -82,12 +81,9 @@ encrypt_file(file_to_encrypt, key)
 
 
 
-
-    def decryptFile(self):
-        print(f"{self.contents} has finished its jail time! Now decrypting...\n")
-        #this also returns the incarcerated file to its home
-
-        
+def decryptFile(self):
+    print(f"{self.contents} has finished its jail time! Now decrypting...\n")
+    #this also returns the incarcerated file to its home
 
 def calculateRelease(timeIn, jailTimeWeeks):
     #expect timeIn to be of the format: YYYY-MM-DD
@@ -108,15 +104,27 @@ def makeInventory():
     if not os.inventory.exists(inventory):
         os.mkdir(inventory)
         print("Folder {inventory} created!")
+        with open("Inventory.txt", "w") as file:
+        with open("Identifiers.txt", "w") as file:
     else:
         continue
 
+def mostRecentIdentifier():
+    chdir(timeVaultDirectory + "/Inventory")
+    with open("Identifiers.txt", "r") as file:
+        identifier = int(file.readline().strip())
+    with open("Identifiers.txt", "w") as file:
+        file.write(identifier + 1)
+    chdir(timeVaultDirectory)
+    return identifier
 # ------------------------------------------------------------
 # Main 
 # ------------------------------------------------------------
 
 
 defaultFileDirectory = "/defaultFileDirectory"
+timeVaultDirectory = os.path.dirname(__file__)
+
 targetFile = "LeagueofLegends.exe"
 startupMessage = "Welcome to Timevault. \nCurrent timelock settings are for: n weeks\nCurrent file directory is: " + defaultFileDirectory + "\n" + f"You are looking to encrypt: {targetFile}" + "\n\nPress 'enter' to begin.\n\nEnter 'edit' to change settings.\nEnter 'help' for more information."
 promptIterationMessage = "Continue.\nPress 'enter' to begin program, using values as defined previously"
@@ -137,9 +145,27 @@ while True:
         break
 
 key = generateKey()
+identifier = mostRecentIdentifier()
+chdir(timeVaultInventory)
+
+with open("Inventory.txt", "w") as file:
+    file.write(identifier + ", ")  # Writing a numerical value, followed by a comma delimiter
+    keyStr = key.decode('utf-8')  # Decoding bytes to string
+    file.write(keyStr)
+
+
 # ------------------------------------------------------------
 # Reference 
 # ------------------------------------------------------------
+# 
+# os.chdir(path)
+# os.mkdir(path)
+# if os.path.exists(file_path):
+    # os.remove(file_path)
+# 
+# 
+# 
+# 
 
 
 # ------------------------------
