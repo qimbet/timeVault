@@ -69,32 +69,26 @@ class cell:
             encrypted_file.write(encrypteData)
             #write a copy of encrypted data to timeVault inventory
 
-
-
         #delete original .exe file
 
-# Example usage
+        write_key_to_file(key, "encryption_key.key")  # Save the key to a file (keep it secure)
+        file_to_encrypt = "file_to_encrypt.txt"  # Replace with the path to your file
+        encrypt_file(file_to_encrypt, key)
 
-write_key_to_file(key, "encryption_key.key")  # Save the key to a file (keep it secure)
-file_to_encrypt = "file_to_encrypt.txt"  # Replace with the path to your file
-encrypt_file(file_to_encrypt, key)
-
-
-
-def decryptFile(self):
-    print(f"{self.contents} has finished its jail time! Now decrypting...\n")
-    #this also returns the incarcerated file to its home
+    def decryptFile(self):
+        print(f"{self.contents} has finished its jail time! Now decrypting...\n")
+        #this also returns the incarcerated file to its home
 
 def calculateRelease(timeIn, jailTimeWeeks):
     #expect timeIn to be of the format: YYYY-MM-DD
     releaseDate = timeIn + datetime.timedelta(weeks=jailTimeWeeks)
     return releaseDate
 
-def checkSentence(file, currentDate):
+def checkSentenceDone(file, currentDate):
     if (file.timeIn + file.jailTime) <= (datetime.datetime.today()):
-        return True
-    else:
         return False
+    else:
+        return True
 
 def generateKey():
     return Fernet.generate_key()
