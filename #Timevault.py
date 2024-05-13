@@ -50,6 +50,7 @@ class cell:
         self.fileName = inputFileName
         self.contents = inputContents       #human-readable
         self.identifier = inputIdentifier   #numerical
+        self.encryptionMethod = Fernet(self.key)
 
     def __str__(self):
         return(f"Recorded file contents are: {self.Contents}\nFile release date is: {calculateRelease(self.timeIn, self.jailTime)} (YYYY-MM-DD)\n")     
@@ -58,30 +59,36 @@ class cell:
         currentDate = datetime.datetime.today() # returns date in format: YYYY-MM-DD
         calculateRelease(currentDate, jailTime)
         #record calculateRelease alongside information on: key, originalDirectory
-        #file management/jailing is addressed here
-        encryptionMethod = Fernet(self.key)
 
         os.chdir(originalDirectory)
         with open(fileName, "rb") as file:
+            saveStatus = False
             fileData = file.read()
             encryptedData = encryptionMethod.encrypt(fileData)
-            os.remove(fileName)
-
-        os.chdir(timeVaultDirectory + "\\Inventory")
-        with open(fileName + ".encrypted", "wb") as encrypted_file:
-            encrypted_file.write(encryptedData)
-            #write a copy of encrypted data to timeVault inventory
-
-        os.remove(fileName)
-        #delete original .exe file
-
-        write_key_to_file(key, "encryption_key.key")  # Save the key to a file (keep it secure)
-        file_to_encrypt = "file_to_encrypt.txt"  # Replace with the path to your file
-        encrypt_file(file_to_encrypt, key)
+            os.chdir(timeVaultDirectory + "/Inventory")
+            with open(fileName + ".encrypted", "wb") as encrypted_file:
+                encrypted_file.write(encryptedData)
+                saveStatus = True
+            os.chdir(originalDirectory)
+            if (encryptSaveStatus == True):
+                os.remove(fileName)           #only removes the unencrypted file once the duplicate has been successfully saved
+            os.chdir(timeVaultDirectory)
 
     def decryptFile(self):
         print(f"{self.contents} has finished its jail time! Now decrypting...\n")
-        #this also returns the incarcerated file to its home
+        os.chdir("./Inventory")
+        with open(fileName + ".encrypted", "rb") as file:
+            saveStatus = False
+            fileData = file.read()
+            decryptedData = encryptionMethod.decrypt(fileData)
+            os.chdir(originalDirectory)
+            with open(fileName, "wb") as decryptedFile:
+                decryptedFile.write(decryptedData)
+                saveStatus = True
+            os.chdir(timeVaultDirectory + "/Inventory")
+            if (encryptSaveStatus == True):
+                os.remove(fileName + ".encrypted")           #only removes the encrypted file once the duplicate has been successfully restored
+
 
 def calculateRelease(timeIn, jailTimeWeeks):
     #expect timeIn to be of the format: YYYY-MM-DD
