@@ -61,14 +61,18 @@ class cell:
         #file management/jailing is addressed here
         encryptionMethod = Fernet(self.key)
 
+        os.chdir(originalDirectory)
         with open(fileName, "rb") as file:
             fileData = file.read()
-        encryptedData = encryptionMethod.encrypt(fileData)
+            encryptedData = encryptionMethod.encrypt(fileData)
+            os.remove(fileName)
 
+        os.chdir(timeVaultDirectory + "\\Inventory")
         with open(fileName + ".encrypted", "wb") as encrypted_file:
-            encrypted_file.write(encrypteData)
+            encrypted_file.write(encryptedData)
             #write a copy of encrypted data to timeVault inventory
 
+        os.remove(fileName)
         #delete original .exe file
 
         write_key_to_file(key, "encryption_key.key")  # Save the key to a file (keep it secure)
@@ -104,12 +108,12 @@ def makeInventory():
         continue
 
 def mostRecentIdentifier():
-    chdir(timeVaultDirectory + "/Inventory")
+    os.chdir(timeVaultDirectory + "/Inventory")
     with open("Identifiers.txt", "r") as file:
         identifier = int(file.readline().strip())
     with open("Identifiers.txt", "w") as file:
         file.write(identifier + 1)
-    chdir(timeVaultDirectory)
+    os.chdir(timeVaultDirectory)
     return identifier
 # ------------------------------------------------------------
 # Main 
@@ -140,7 +144,7 @@ while True:
 
 key = generateKey()
 identifier = mostRecentIdentifier()
-chdir(timeVaultInventory)
+os.chdir(timeVaultInventory)
 
 with open("Inventory.txt", "w") as file:
     file.write(identifier + ", ")  # Writing a numerical value, followed by a comma delimiter
