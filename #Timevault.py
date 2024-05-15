@@ -1,21 +1,32 @@
 #Timevault
 #Jacob Mattie, May 13, 2024
 
+
+
+# ------------------------------------------------------------
+# Tasklist: 
+#
+# Update functions to use database features: encryptFile, DecryptFile, mostRecentIdentifier, makeInventory
+# For public release: require that encrypted files have the extension '.exe' (to lock out casual ransomware uses)
+# Develop a GUI to select files to be encrypted
+# 
+# ------------------------------------------------------------
+
+
+
 # This is code to encrypt a file for an indeterminate (user-set) amount of time; most typically in weeks scale. 
-# * This would be best meshed with a GUI, wherein locations could be selected through a traditinal file-window manager.
 # Security should be considered -- this is not a robust file encryption scheme, since all keys are visible within keyChain.
-# Keychain could be encrypted elsehow (consider private data center & API calls for business use). 
-# For a user-end simple encryption, generating a large enough set of random data to obfuscate the true term (vulnerable to automation)
+# Keychain could be encrypted elsehow (consider private data center & API calls, should this be expanded for business use). 
+# For a user-end simple encryption, generating a large enough set of random data to obfuscate the true term (vulnerable to automated attacks)
 
 #Future improvements:
 	# Write a .bat script to parse timevault cells on computer startup (so files are decrypted when appropriate)
 	# On TimeVault startup, check jail times. If none are due for release, exit the program to save computer power.
-    # Currently, ecrypted files are inventoried through use of a .txt file. This would be better handled by an SQL engine (see also: import sqlite3)
 
 import os
 from cryptography.fernet import Fernet
 import datetime
-#import sqlite3
+import sqlite3
 
 class cell: 
     def __init__(inputKey, inputReleaseDate, inputOriginalDirectory, inputFileName, inputContents, inputIdentifier):
@@ -102,7 +113,6 @@ def mostRecentIdentifier(): #generates the next available identifier number with
 
     os.chdir(timeVaultDirectory)
     return identifier
-
 # ------------------------------------------------------------
 # Main 
 # ------------------------------------------------------------
@@ -110,9 +120,10 @@ def mostRecentIdentifier(): #generates the next available identifier number with
 
 global targetFileDirectory = "/targetFileDirectory"
 global timeVaultDirectory = os.path.dirname(__file__)
-global timeVaultInventory = timeVaultDirectory + "/Inventory"
+global inventoryString = "/Inventory"
+global timeVaultInventory = timeVaultDirectory + inventoryString
 targetFile = "LeagueofLegends.exe"
-global jailTimeWeeks = 6 #weeks
+global jailTimeWeeks = 6 
 
 startupMessage = f"Welcome to Timevault. \nCurrent timelock settings are for: {jailTimeWeeks} weeks\nCurrent target file directory is: " + targetFileDirectory + "\n" + f"You are looking to encrypt: {targetFile}" + "\n\nPress 'enter' to begin.\n\nEnter 'edit' to change settings.\nEnter 'help' for more information."
 promptIterationMessage = "Continue.\nPress 'enter' to begin program, using values as defined previously"
@@ -138,12 +149,50 @@ os.chdir(timeVaultInventory)
 
 convict = cell(key, calculateRelease(), targetFileDirectory, targetFile, userComments, identifier)
 
-with open("Inventory.txt", "a") as file:
-    file.write(identifier + ", ")  # Writing a numerical value, followed by a comma delimiter
-    keyStr = key.decode('utf-8')  # Decoding bytes to string
-    file.write(keyStr)
+# with open("Inventory.txt", "a") as file:
+#     file.write(identifier + ", ")  # Writing a numerical value, followed by a comma delimiter
+#     keyStr = key.decode('utf-8')  # Decoding bytes to string
+#     file.write(keyStr)
 
-    currentDate = datetime.datetime.today() # returns date in format: YYYY-MM-DD
-    releaseDate = calculateRelease(currentDate, jailTimeWeeks)
+#     currentDate = datetime.datetime.today() # returns date in format: YYYY-MM-DD
+#     releaseDate = calculateRelease(currentDate, jailTimeWeeks)
 
-convict.encryptFile()
+convict.encryptFile() #################################################################################
+
+conn = sqlite3.connect("Program Files.db")
+cursor = conn.cursor()
+
+inventory = f".{inventoryString}"
+if not os.inventory.exists(inventory): #set up database tables during the initial setup
+    os.mkdir(inventory)
+    print("Folder {inventory} created!")
+    os.chdir(timeVaultInventory)
+    # with open("Inventory.txt", "w") as file:
+    # with open("Identifiers.txt", "w") as file:
+    create_prisonerList_table = '''
+    CREATE TABLE IF NOT EXISTS prisonerList (
+        prisoner_id INTEGER PRIMARY KEY,
+        name TEXT,
+        cell_number INTEGER
+    )
+    '''
+    create_Keychain_table = '''
+    CREATE TABLE IF NOT EXISTS guardKeychain (
+        primaryKey INTEGER PRIMARY KEY,
+        key INTEGER,
+        releaseDate DATE
+    )
+    '''
+    os.chdir(timeVaultDirectory)
+
+    cursor.execute(create_prisonerList_table)
+    cursor.execute(create_Keychain_table)
+    conn.commit()
+else:
+    continue
+
+
+
+
+
+
