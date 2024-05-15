@@ -6,7 +6,7 @@
 # ------------------------------------------------------------
 # Tasklist: 
 #
-# Update functions to use database features: encryptFile, DecryptFile, mostRecentIdentifier, makeInventory
+# Update functions to use database features: encryptFile, DecryptFile, mostRecentIdentifier
 # For public release: require that encrypted files have the extension '.exe' (to lock out casual ransomware uses)
 # Develop a GUI to select files to be encrypted
 # 
@@ -28,59 +28,70 @@ from cryptography.fernet import Fernet
 import datetime
 import sqlite3
 
-class cell: 
-    def __init__(inputKey, inputReleaseDate, inputOriginalDirectory, inputFileName, inputContents, inputIdentifier):
+# class cell: 
+#     def __init__(inputKey, inputReleaseDate, inputOriginalDirectory, inputFileName, inputContents, inputIdentifier):
+#         self.key = inputKey
+#         self.releaseDate = inputReleaseDate
+#         self.originalDirectory = inputOriginalDirectory
+#         self.fileName = inputFileName
+#         self.contents = inputContents       #human-readable
+#         self.identifier = inputIdentifier   #numerical
+#         self.encryptionMethod = Fernet(self.key)
+#
+    # def __str__(self):
+    #     if (self.contents == ""):
+    #         return(f"File release date is: day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n")     
+    #     else:
+    #         return (f"Recorded file summary is: {self.Contents}\n\nFile release date is:  day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n\n")     
+    
+    # def encryptFile(self):  #note that the "self" argument allows access to all class parameters
+    #     #record calculateRelease alongside information on: key, originalDirectory
+    #     os.chdir(originalDirectory)
+    #     with open(fileName, "rb") as file:
+    #         saveStatus = False
+    #         fileData = file.read()
+    #         encryptedData = encryptionMethod.encrypt(fileData)
+    #         os.chdir(timeVaultInventory)
+    #         with open(fileName + ".encrypted", "wb") as encrypted_file:
+    #             encrypted_file.write(encryptedData)
+    #             saveStatus = True
+    #         os.chdir(originalDirectory)
+    #         if (encryptSaveStatus == True):
+    #             os.remove(fileName)           #only removes the unencrypted file once the duplicate has been successfully saved
+    #         os.chdir(timeVaultDirectory)
+
+    # def decryptFile(self):
+    #     print(f"{self.contents} has finished its jail time! Now decrypting...\n")
+    #     os.chdir("./Inventory")
+    #     with open(fileName + ".encrypted", "rb") as file:
+    #         saveStatus = False
+    #         fileData = file.read()
+    #         decryptedData = encryptionMethod.decrypt(fileData)
+    #         os.chdir(originalDirectory)
+    #         with open(fileName, "wb") as decryptedFile:
+    #             decryptedFile.write(decryptedData)
+    #             saveStatus = True
+    #         os.chdir(timeVaultInventory)
+    #         if (encryptSaveStatus == True):
+    #             os.remove(fileName + ".encrypted")           #only removes the encrypted file once the duplicate has been successfully restored
+    #             os.chdir(timeVaultDirectory)
+
+    # def checkSentenceDone(self): #boolean return
+    #     if ((self.releaseDate) <= datetime.datetime.today()):
+    #         return False
+    #     else:
+    #         return True
+
+
+class warden:
+    def __init__(inputKey, inputIdentifier, inputConnection, inputCursor):
         self.key = inputKey
-        self.releaseDate = inputReleaseDate
-        self.originalDirectory = inputOriginalDirectory
-        self.fileName = inputFileName
-        self.contents = inputContents       #human-readable
-        self.identifier = inputIdentifier   #numerical
+        self.identifier = inputIdentifier
+        self.connection = inputConnection
+        self.cursor = inputCursor
         self.encryptionMethod = Fernet(self.key)
 
-    def __str__(self):
-        if (self.contents == ""):
-            return(f"File release date is: day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n")     
-        else:
-            return (f"Recorded file summary is: {self.Contents}\n\nFile release date is:  day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n\n")     
-    
-    def encryptFile(self):  #note that the "self" argument allows access to all class parameters
-        #record calculateRelease alongside information on: key, originalDirectory
-        os.chdir(originalDirectory)
-        with open(fileName, "rb") as file:
-            saveStatus = False
-            fileData = file.read()
-            encryptedData = encryptionMethod.encrypt(fileData)
-            os.chdir(timeVaultInventory)
-            with open(fileName + ".encrypted", "wb") as encrypted_file:
-                encrypted_file.write(encryptedData)
-                saveStatus = True
-            os.chdir(originalDirectory)
-            if (encryptSaveStatus == True):
-                os.remove(fileName)           #only removes the unencrypted file once the duplicate has been successfully saved
-            os.chdir(timeVaultDirectory)
-
-    def decryptFile(self):
-        print(f"{self.contents} has finished its jail time! Now decrypting...\n")
-        os.chdir("./Inventory")
-        with open(fileName + ".encrypted", "rb") as file:
-            saveStatus = False
-            fileData = file.read()
-            decryptedData = encryptionMethod.decrypt(fileData)
-            os.chdir(originalDirectory)
-            with open(fileName, "wb") as decryptedFile:
-                decryptedFile.write(decryptedData)
-                saveStatus = True
-            os.chdir(timeVaultInventory)
-            if (encryptSaveStatus == True):
-                os.remove(fileName + ".encrypted")           #only removes the encrypted file once the duplicate has been successfully restored
-                os.chdir(timeVaultDirectory)
-
-    def checkSentenceDone(self): #boolean return
-        if ((self.releaseDate) <= datetime.datetime.today()):
-            return False
-        else:
-            return True
+        def releaseFile(self.key, self.identifier):
 
 
 def calculateRelease(timeIn, jailTimeWeeks): #returns date in YYYY-MM-DD. Can call for calculateRelease(timeIn, jailTimeWeeks).year
@@ -89,18 +100,6 @@ def calculateRelease(timeIn, jailTimeWeeks): #returns date in YYYY-MM-DD. Can ca
 
 def generateKey():
     return Fernet.generate_key()
-
-def makeInventory(): #should only be run once -- this is the "setup wizard"
-    inventory = "./Inventory" #could be iterated in a loop -- for files in [], if not os.[x] exists ...
-    if not os.inventory.exists(inventory):
-        os.mkdir(inventory)
-        print("Folder {inventory} created!")
-        os.chdir(timeVaultInventory)
-        with open("Inventory.txt", "w") as file:
-        with open("Identifiers.txt", "w") as file:
-        os.chdir(timeVaultDirectory)
-    else:
-        continue
 
 def mostRecentIdentifier(): #generates the next available identifier number with which to associate a cell. Should be replaced with SQL someday
     os.chdir(timeVaultInventory)
@@ -113,6 +112,12 @@ def mostRecentIdentifier(): #generates the next available identifier number with
 
     os.chdir(timeVaultDirectory)
     return identifier
+
+def encryptFile(connection, cursor, key, identifier, releaseDate, originalDirectory, fileName):
+
+def releaseFile(connection, cursor, key, identifier):
+    
+
 # ------------------------------------------------------------
 # Main 
 # ------------------------------------------------------------
@@ -121,9 +126,10 @@ def mostRecentIdentifier(): #generates the next available identifier number with
 global targetFileDirectory = "/targetFileDirectory"
 global timeVaultDirectory = os.path.dirname(__file__)
 global inventoryString = "/Inventory"
+global inventory = f".{inventoryString}"
 global timeVaultInventory = timeVaultDirectory + inventoryString
 targetFile = "LeagueofLegends.exe"
-global jailTimeWeeks = 6 
+global jailTimeWeeks = 6 #default value; should be amenable to user-directed changes
 
 startupMessage = f"Welcome to Timevault. \nCurrent timelock settings are for: {jailTimeWeeks} weeks\nCurrent target file directory is: " + targetFileDirectory + "\n" + f"You are looking to encrypt: {targetFile}" + "\n\nPress 'enter' to begin.\n\nEnter 'edit' to change settings.\nEnter 'help' for more information."
 promptIterationMessage = "Continue.\nPress 'enter' to begin program, using values as defined previously"
@@ -162,34 +168,35 @@ convict.encryptFile() ##########################################################
 conn = sqlite3.connect("Program Files.db")
 cursor = conn.cursor()
 
-inventory = f".{inventoryString}"
-if not os.inventory.exists(inventory): #set up database tables during the initial setup
+if not os.inventory.exists(inventory): #create database tables during the initial setup
     os.mkdir(inventory)
     print("Folder {inventory} created!")
     os.chdir(timeVaultInventory)
     # with open("Inventory.txt", "w") as file:
     # with open("Identifiers.txt", "w") as file:
-    create_prisonerList_table = '''
+    create_cellTable = '''
     CREATE TABLE IF NOT EXISTS prisonerList (
-        prisoner_id INTEGER PRIMARY KEY,
-        name TEXT,
+        identifier INTEGER PRIMARY KEY,
+        fileName TEXT,
+        originalDirectory TEXT,
+        encryptedFile BLOB,     #Binary Large Object (i.e. encrypted .exe file)
         cell_number INTEGER
     )
     '''
-    create_Keychain_table = '''
+    create_keychainTable = '''
     CREATE TABLE IF NOT EXISTS guardKeychain (
-        primaryKey INTEGER PRIMARY KEY,
-        key INTEGER,
+        identifier INTEGER PRIMARY KEY,
+        key BLOB,
         releaseDate DATE
     )
     '''
     os.chdir(timeVaultDirectory)
 
-    cursor.execute(create_prisonerList_table)
-    cursor.execute(create_Keychain_table)
+    cursor.execute(create_cellTable)
+    cursor.execute(create_keychainTable)
     conn.commit()
-else:
-    continue
+
+
 
 
 
