@@ -110,7 +110,7 @@ def decryptFile(identifierInput, key, conn, cursor):
 
     os.chdir(timeVaultInventory)
 
-def checkRelease(conn, cursor):
+def checkRelease(cursor):
     cursor.execute("""
         SELECT key, identifier
         FROM jail
@@ -120,14 +120,14 @@ def checkRelease(conn, cursor):
     results = cursor.fetchall()
     return results
 
-def calculateRelease(jailTimeWeeks): #returns date in YYYY-MM-DD. Can call for calculateRelease(timeIn, jailTimeWeeks).year
+def calculateRelease(jailTimeWeeks): #returns date in YYYY-MM-DD
     releaseDate = datetime.datetime.now() + datetime.timedelta(weeks=jailTimeWeeks)
     return releaseDate
 
 def generateKey():
     return Fernet.generate_key()
         
-def newIdentifier(connection, cursor)
+def newIdentifier(cursor)
     while(true):
         testIdentifier = random.randint(1,maxNumberOfEncryptions) #this allows up to 1000 programs to be encrypted at a time
         cursor.execute("""
@@ -180,7 +180,6 @@ while True:
 key = generateKey()
 identifier = newIdentifier()
 os.chdir(timeVaultInventory)
-
 
 encryptFile(key, identifier, targetFileDirectory, fileName, conn, cursor)
 
