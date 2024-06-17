@@ -23,132 +23,115 @@
 	# Write a .bat script to parse timevault cells on computer startup (so files are decrypted when appropriate)
 	# On TimeVault startup, check jail times. If none are due for release, exit the program to save computer power.
 
+#SQL tables: 
+#1 table contains in each row:
+# BLOBFile, Identifier
+
+#2nd table contains, in each row: 
+#identifier, original file location, original filename, original file extension, releaseDate
+
 import os
 from cryptography.fernet import Fernet
 import datetime
 import sqlite3
+import random
 
-# class cell: 
-#     def __init__(inputKey, inputReleaseDate, inputOriginalDirectory, inputFileName, inputContents, inputIdentifier):
-#         self.key = inputKey
-#         self.releaseDate = inputReleaseDate
-#         self.originalDirectory = inputOriginalDirectory
-#         self.fileName = inputFileName
-#         self.contents = inputContents       #human-readable
-#         self.identifier = inputIdentifier   #numerical
-#         self.encryptionMethod = Fernet(self.key)
-#
-    # def __str__(self):
-    #     if (self.contents == ""):
-    #         return(f"File release date is: day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n")     
-    #     else:
-    #         return (f"Recorded file summary is: {self.Contents}\n\nFile release date is:  day: {releaseDate.day}, month: {releaseDate.month}, of {releaseDate.year}\n\n")     
+global targetFileDirectory = "/targetFileDirectory"
+
+global timeVaultDirectory = os.path.dirname(os.path.realpath(__file__))     #this needs verification imo
+global inventoryString = "/Inventory"
+global timeVaultInventory = timeVaultDirectory + inventoryString
+
+global jailTimeWeeks = 6 #default value; should be amenable to user-directed changes
+global maxNumberOfEncryptions = 1000
+
+targetFile = "LeagueofLegends.exe"
+
+# --------------------------------------------------------------------------------------------------------------------------
+
+#                                        Function Definitions 
+
+# --------------------------------------------------------------------------------------------------------------------------
+
+def encryptFile(key, identifier, originalFileDirectory, fileName, connection, cursor):  #copies and encrypts target file; 
+    #record calculateRelease alongside information on: key, originalFileDirectory
+    #timeVaultInventory: Encrypted files are stored here. This is the 'prison'
+    encryptionMethod = Fernet(key)
+    saveStatus = False
+
+    os.chdir(originalFileDirectory)
+    encryptedData = encryptionMethod.encrypt(fileData)
+
+    os.chdir(timeVaultInventory)
+    SQLOPERATION1 := add_to_table: encryptedData      #-------------------------------------------------- add to "BLOB-prisoner" colum
+    SQLOPERATION1 := add_to_table: identifier     #-------------------------------------------------
+    conn.commit()   #use this line whenever the table is updated
+
+    os.chdir(originalFileDirectory)
+    os.remove(fileName)           #only removes the unencrypted files once the duplicate has been successfully saved
+    os.chdir(timeVaultDirectory)
+
+def decryptFile(key, identifier, connection, cursor):
+    encryptionMethod = Fernet(key)
+    saveStatus = False
+
+    SQLOPERATION1 := search_by_identifier #-------------------------------------------------- identify row to decrypt
+    SQLOPERATION1 := fileData = lookup_BLOB-prisoner_file  #--------------------------------------------------
+
+    SQLOPERATION2 := lookup(fileName)
+    SQLOPERATION2 := lookup(fileExtension)
+    SQLOPERATION2 := lookup(originalDirectory)
+    conn.commit()   #use this line whenever the table is updated
+
+
+    decryptedFile = encryptionMethod.decrypt(fileData) 
+    os.chdir(originalDirectory)
+    with open((fileName+fileExtension), "wb") as decryptedFile:
+        decryptedFile.write(decryptedData)
+        saveStatus = True
+
+    os.chdir(timeVaultInventory)
+    if (encryptSaveStatus == True):
+        os.remove(fileName + ".encrypted")           #only removes the encrypted file once the duplicate has been successfully restored
+        os.chdir(timeVaultDirectory)
+        SQLOPERATION1 remove rows
+        SQLOPERATION2 remove rows
+        conn.commit()   #use this line whenever the table is updated
+
+def checkRelease(conn, cursor):
     
-    # def encryptFile(self):  #note that the "self" argument allows access to all class parameters
-    #     
-
-    # def decryptFile(self):
-    #     
-
-    # def checkSentenceDone(self): #boolean return
-    #     if ((self.releaseDate) <= datetime.datetime.today()):
-    #         return False
-    #     else:
-    #         return True
-
-
-class incarceral:
-    def __init__(inputKey, inputReleaseDate, inputOriginalDirectory, inputFileName, inputIdentifier, inputConnection, inputCursor):
-        self.key = inputKey
-        self.identifier = inputIdentifier
-        self.connection = inputConnection
-        self.cursor = inputCursor
-        self.releaseDate = inputReleaseDate
-        self.originalDirectory = inputOriginalDirectory
-        self.fileName = inputFileName
-        self.encryptionMethod = Fernet(self.key)
-
-        def encryptFile(self.key, self.identifier, self.originalDirectory, self.fileName, self.connection, self.cursor):
-            #record calculateRelease alongside information on: key, originalDirectory
-            os.chdir(originalDirectory)
-            OSOPERATION = copy_fileData_into_temporary_storage
-            os.chdir(timeVaultPlayground)
-            OSOPERATION = paste_copied_fileData
-            encryptedData = encryptionMethod.encrypt(fileData)
-            os.chdir(timeVaultInventory)
-                    with open(fileName + ".encrypted", "wb") as encrypted_file:
-                        encrypted_file.write(encryptedData)
-                        saveStatus = True
-            SQLOPERATION = add_to_table__encryptedData
-            SQLOPERATION = set_saveStatus_as_True
-            os.chdir(timeVaultPlayground)
-            os.remove(fileData)
-
-            os.chdir(originalDirectory)
-            os.remove(fileName)           #only removes the unencrypted file once the duplicate has been successfully saved
-            os.chdir(timeVaultDirectory)
-
-        def decryptFile(self.key, self.identifier, self.connect, self.cursor)
-        os.chdir(timeVaultInventory)
-            saveStatus = False
-            SQLOPERATION = search_by_identifier
-            SQLOPERATION = retrieve_associated_BLOB_store_as_fileData
-
-            decryptedFile = encryptionMethod.decrypt(fileData) #what filetype does this return? Is it necessary to save it as a separate variable?
-            os.chdir(originalDirectory)
-            with open(fileName, "wb") as decryptedFile:
-                decryptedFile.write(decryptedData)
-                #is it necessary to change the file type to a .exe?
-                saveStatus = True
-            os.chdir(timeVaultInventory)
-            if (encryptSaveStatus == True):
-                os.remove(fileName + ".encrypted")           #only removes the encrypted file once the duplicate has been successfully restored
-                os.chdir(timeVaultDirectory)
-
-
 
 def calculateRelease(timeIn, jailTimeWeeks): #returns date in YYYY-MM-DD. Can call for calculateRelease(timeIn, jailTimeWeeks).year
     releaseDate = timeIn + datetime.timedelta(weeks=jailTimeWeeks)
     return releaseDate
 
+def checkSentenceDone(): #boolean return
+    if ((releaseDate) <= datetime.datetime.today()):
+        return False
+    else:
+        return True
+
 def generateKey():
     return Fernet.generate_key()
-
-if true():
-    # def mostRecentIdentifier(): #generates the next available identifier number with which to associate a cell. Should be replaced with SQL someday
-    #     os.chdir(timeVaultInventory)
-
-    #     with open("Identifiers.txt", "r") as file:
-    #         identifier = int(file.readline().strip())
-
-    #     with open("Identifiers.txt", "w") as file:
-    #         file.write(identifier + 1)
-
-    #     os.chdir(timeVaultDirectory)
-    #     return identifier
         
 def newIdentifier(connection, cursor)
-    #identifier = find number not in SQL list
-    return identifier
+    while(true):
+        testIdentifier = random.randint(1,maxNumberOfEncryptions) #this allows up to 1000 programs to be encrypted at a time
+        if(SQLOPERATION2 does not contain testIdentifier):
+            return identifier
 
-    
+# --------------------------------------------------------------------------------------------------------------------------
 
-# ------------------------------------------------------------
-# Main 
-# ------------------------------------------------------------
+#                                        Main 
 
+# --------------------------------------------------------------------------------------------------------------------------
 
-global targetFileDirectory = "/targetFileDirectory"
-global timeVaultDirectory = os.path.dirname(__file__)
-global inventoryString = "/Inventory"
-global playgroundString = "/Playground"
-global inventory = f".{inventoryString}"
-global timeVaultInventory = timeVaultDirectory + inventoryString
-global timeVaultPlayground = timeVaultDirectory + playgroundString
-targetFile = "LeagueofLegends.exe"
-global jailTimeWeeks = 6 #default value; should be amenable to user-directed changes
+if not os.path.exists(timeVaultInventory): #create database tables during the initial setup
+    os.mkdir("Inventory")
+    print("Folder 'Inventory' created!")
+    os.chdir(timeVaultDirectory)
 
-startupMessage = f"Welcome to Timevault. \nCurrent timelock settings are for: {jailTimeWeeks} weeks\nCurrent target file directory is: " + targetFileDirectory + "\n" + f"You are looking to encrypt: {targetFile}" + "\n\nPress 'enter' to begin.\n\nEnter 'edit' to change settings.\nEnter 'help' for more information."
+startupMessage = f"Welcome to Timevault. \nCurrent timelock settings are for: {jailTimeWeeks} weeks\nCurrent target file directory is: {targetFileDirectory} \nYou are looking to encrypt: {targetFile}" + "\n\nPress 'enter' to begin.\n\nEnter 'edit' to change settings.\nEnter 'help' for more information."
 promptIterationMessage = "Continue.\nPress 'enter' to begin program, using values as defined previously"
 helpString = "help"
 editString = "edit"
@@ -159,65 +142,23 @@ while True:
         print("Actually I haven't filled in the help section yet. Good luck.")
         input(userChoice)
     if(upper.editstring == upper.userChoice)
-        print("Here's where you will be able to edit variables, later")
+        print("Here's where you will be able to edit variables. But later. Once I build that feature in. :P")
         input(userChoice)
     if(len.userChoice == 0)
         break
 
-userComments = input("Would you like to associate comments with the file?\n")
-
-key = generateKey()
-identifier = mostRecentIdentifier()
-os.chdir(timeVaultInventory)
-
-convict = cell(key, calculateRelease(), targetFileDirectory, targetFile, userComments, identifier)
-
-# with open("Inventory.txt", "a") as file:
-#     file.write(identifier + ", ")  # Writing a numerical value, followed by a comma delimiter
-#     keyStr = key.decode('utf-8')  # Decoding bytes to string
-#     file.write(keyStr)
-
-#     currentDate = datetime.datetime.today() # returns date in format: YYYY-MM-DD
-#     releaseDate = calculateRelease(currentDate, jailTimeWeeks)
-
-convict.encryptFile() #################################################################################
-
-conn = sqlite3.connect("Program Files.db")
+conn = sqlite3.connect("timeVault.db")
 cursor = conn.cursor()
 
-if not os.inventory.exists(inventory): #create database tables during the initial setup
-    os.mkdir(Inventory)
-    os.mkir(Playground)
-    print("Folder {inventory} created!")
-    os.chdir(timeVaultInventory)
-    # with open("Inventory.txt", "w") as file:
-    # with open("Identifiers.txt", "w") as file:
-    create_cellTable = '''
-    CREATE TABLE IF NOT EXISTS prisonerList (
-        identifier INTEGER PRIMARY KEY,
-        fileName TEXT,
-        originalDirectory TEXT,
-        encryptedFile BLOB,     #Binary Large Object (i.e. encrypted .exe file)
-        cell_number INTEGER
-    )
-    '''
-    create_keychainTable = '''
-    CREATE TABLE IF NOT EXISTS guardKeychain (
-        identifier INTEGER PRIMARY KEY,
-        key BLOB,
-        releaseDate DATE
-    )
-    '''
-    os.chdir(timeVaultDirectory)
+cursor.execute("CREATE TABLE if NOT EXISTS jail(identifier INT, jailFile BLOB, PRIMARY KEY(identifier))")
+cursor.execute("CREATE TABLE if NOT EXISTS wardenRecords(identifier INT, originalFileLocation TEXT, originalFilename TEXT, originalFileExtension TEXT, releaseDate DATETIME, PRIMARY KEY(identifier))")
+conn.commit()   #use this line whenever the table is updated
 
-    cursor.execute(create_cellTable)
-    cursor.execute(create_keychainTable)
-    conn.commit()
+key = generateKey()
+identifier = newIdentifier()
+os.chdir(timeVaultInventory)
 
 
+encryptFile(key, identifier, targetFileDirectory, fileName, conn, cursor)
 
-
-
-
-
-
+decryptFile(key, identifier, conn, cursor)
