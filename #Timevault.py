@@ -17,19 +17,25 @@ import datetime
 import sqlite3
 import random
 
-global targetFileDirectory = "/targetFileDirectory"
+debug = 1
+if debug == 1:
+    input("Start of program -- Debug mode ON")
 
-global timeVaultDirectory = os.path.dirname(os.path.realpath(__file__))     #this needs verification imo
-global inventoryString = "/Inventory"
-global timeVaultInventory = timeVaultDirectory + inventoryString
+targetFileDirectory = "C:\\Riot Games\\Riot Client"
+fileName = "RiotClientServices.exe"
 
-global jailTimeWeeks = 6 #default value; should be amenable to user-directed changes
-global maxNumberOfEncryptions = 1000
+timeVaultDirectory = os.path.dirname(os.path.realpath(__file__))     #this needs verification imo
+inventoryString = "\\Inventory"
+timeVaultInventory = timeVaultDirectory + inventoryString
 
-fileName = "LeagueofLegends.exe"
+jailTimeWeeks = 6 #default value; should be amenable to user-directed changes
+maxNumberOfEncryptions = 1000
 
 conn = sqlite3.connect("timeVault.db")
 cursor = conn.cursor()
+
+if debug == 1:
+    print("SQL connection established, creating tables as necessary")
 
 cursor.execute("""CREATE TABLE if NOT EXISTS jail(
             identifier INT, 
@@ -44,6 +50,8 @@ cursor.execute("""CREATE TABLE if NOT EXISTS wardenRecords(
             PRIMARY KEY(identifier))""")
 
 conn.commit()   #use this line whenever the table is updated
+if debug == 1:
+    print("Tables created and committed")
 
 # --------------------------------------------------------------------------------------------------------------------------
 
@@ -57,19 +65,21 @@ def encryptFile(identifier, key, originalFileDirectory, fileName, jailTimeWeeks,
     encryptionMethod = Fernet(key)
 
     os.chdir(originalFileDirectory)
-    encryptedData = encryptionMethod.encrypt(fileData)
+    with open(fileName, "rb") as file:
+        fileData = file.read()
+        encryptedData = encryptionMethod.encrypt(fileData)
 
     os.chdir(timeVaultInventory)
 
     cursor.execute("""
         INSERT INTO jail (identifier, convict)
         VALUES (?, ?)
-    """(identifierInput, encryptedData))
+    """,(identifier, encryptedData,))
 
     cursor.execute("""
         INSERT INTO wardenRecords (identifier, originalFileLocation, originalFileName, releaseDate)
         VALUES (?, ?, ?, ?)
-    """(identifierInput, originalFileDirectory, fileName, calculateRelease(jailTimeWeeks)))    
+    """,(identifier, originalFileDirectory, fileName, calculateRelease(jailTimeWeeks),))    
 
     conn.commit()   #use this line whenever the table is updated
 
@@ -98,7 +108,7 @@ def decryptFile(identifierInput, key, conn, cursor):
     originalDirectory = fileInfo[1]
     fileName = fileInfo[2]
 
-    decryptedFile = encryptionMethod.decrypt(fileData) 
+    decryptedData = encryptionMethod.decrypt(fileData) 
     os.chdir(originalDirectory)
 
     with open((fileName), "wb") as decryptedFile:       #to be edited if we want to differentiate files based on type (e.g. .exe)
@@ -112,10 +122,20 @@ def decryptFile(identifierInput, key, conn, cursor):
 
 def checkRelease(cursor):
     cursor.execute("""
-        SELECT key, identifier
-        FROM jail
+        SELECT identifier
+        FROM wardenRecords
         WHERE releaseDate < DATE('now');    
     """)
+    #date('now') function returns the date as text in this format: YYYY-MM-DD
+    results = cursor.fetchall()
+    return results
+
+def findKey(identifierInput, cursor):
+    cursor.execute("""
+        SELECT key
+        FROM wardenRecords
+        WHERE identifier = ?;    
+    """, (identifierInput,))
     #date('now') function returns the date as text in this format: YYYY-MM-DD
     results = cursor.fetchall()
     return results
@@ -127,8 +147,8 @@ def calculateRelease(jailTimeWeeks): #returns date in YYYY-MM-DD
 def generateKey():
     return Fernet.generate_key()
         
-def newIdentifier(cursor)
-    while(true):
+def newIdentifier(cursor):
+    while True:
         testIdentifier = random.randint(1,maxNumberOfEncryptions) #this allows up to 1000 programs to be encrypted at a time
         cursor.execute("""
                        SELECT 1
@@ -146,20 +166,26 @@ def newIdentifier(cursor)
 # --------------------------------------------------------------------------------------------------------------------------
 
 if not os.path.exists(timeVaultInventory): #create database tables during the initial setup
+    if debug == 1:
+        print("Inventory does not exist. Creating. ")
     os.mkdir("Inventory")
     print("Folder 'Inventory' created!")
     os.chdir(timeVaultDirectory)
 
-toRelease = checkRelease(conn, cursor) #checkRelease returns a list of tuples; (identifier, key)
+toRelease = set()
+for element in checkRelease(cursor):
+    toRelease.add(element, findKey(element, cursor)) #toRelease is a set of tuples; (identifier, key)
+
 for element in toRelease:
     decryptFile(element[0], element[1], conn, cursor)
+    print("A file has been released!")  #Which one? Who knows :P
 
-startupMessage = f"""Welcome to Timevault. \nCurrent timelock settings are for: {jailTimeWeeks} weeks\n
+startupMessage = f"""Welcome to Timevault. \n
                     Current target file directory is: {targetFileDirectory} \n
-                    You are looking to encrypt: {fileName} \n\n
-                    Press 'enter' to begin.\n\n
-                    Enter 'edit' to change settings.\n
-                    Enter 'help' for more information."""
+                    You are looking to encrypt: {fileName} for {jailTimeWeeks} weeks.\n\n
+                    Press 'enter' to begin.\n
+                    Enter 'edit' to change settings.
+                    Enter 'help' for more information.\n"""
 
 promptIterationMessage = "Continue.\nPress 'enter' to begin program, using values as defined previously"
 helpString = "help"
@@ -167,20 +193,27 @@ editString = "edit"
 
 userChoice = input(startupMessage)
 while True:
-    if(upper.helpstring == upper.userChoice)
+    if(helpString.upper() == userChoice.upper()):
         print("Actually I haven't filled in the help section yet. Good luck.")
         input(userChoice)
-    if(upper.editstring == upper.userChoice)
+    elif(editString.upper() == userChoice.upper()):
         print("Here's where you will be able to edit variables. But later. Once I build that feature in. :P")
         input(userChoice)
-    if(len.userChoice == 0)
+    elif(userChoice == ""):
         break
 
-
+if debug == 1:
+    print("Begin encryption methods")
 key = generateKey()
-identifier = newIdentifier()
+identifier = newIdentifier(cursor)
 os.chdir(timeVaultInventory)
+if debug == 1:
+    print("key, identifier, established. Directory set to Inventory.")
+encryptFile(identifier, key, targetFileDirectory, fileName, jailTimeWeeks, conn, cursor)
+#identifier, key, originalFileDirectory, fileName, jailTimeWeeks, conn, cursor)
 
-encryptFile(key, identifier, targetFileDirectory, fileName, conn, cursor)
-
+if debug == 1:
+    print("Sequential to encryptFile. Success?")
 conn.close()
+if debug == 1:
+    x = input("All should be good! Enter some value to close the program.")
